@@ -1,0 +1,10 @@
+version: '3.8'
+services:
+  m3u8-extractor:
+    build: .
+    container_name: m3u8-extractor
+    ports:
+      - "5000:5000"
+    restart: always
+    cap_add:
+      - SYS_ADMIN
