@@ -1,7 +1,8 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 from playwright.sync_api import sync_playwright, TimeoutError
 from flask_cors import CORS
 import traceback
+import requests
 
 app = Flask(__name__)
 CORS(app)
@@ -56,6 +57,22 @@ def extract():
         return jsonify({"error": "Missing URL"}), 400
     result = extract_m3u8(url)
     return jsonify(result)
+
+@app.route("/stream")
+def stream_proxy():
+    video_url = request.args.get("url")
+    if not video_url:
+        return "Missing URL", 400
+    headers = {
+        "Referer": "https://jable.tv/",
+        "User-Agent": "Mozilla/5.0"
+    }
+    r = requests.get(video_url, headers=headers, stream=True)
+    def generate():
+        for chunk in r.iter_content(chunk_size=1024):
+            if chunk:
+                yield chunk
+    return Response(generate(), content_type=r.headers.get("Content-Type", "application/vnd.apple.mpegurl"))
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
